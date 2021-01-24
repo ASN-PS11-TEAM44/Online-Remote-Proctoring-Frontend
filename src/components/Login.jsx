@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import io from "socket.io-client";
 import "../styles/authentication.css";
 import "../styles/Login.css";
 
@@ -8,6 +9,13 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
+
+  useEffect(() => {
+    // eslint-disable-next-line no-unused-vars
+    const socket = io(process.env.REACT_APP_BACKEND_URL, {
+      withCredentials: true,
+    });
+  }, []);
 
   const emailPasswordVerification = () => {
     if (email.length === 0) {
