@@ -11,11 +11,11 @@ const videoConstraints = {
 };
 
 const Login = (props) => {
-  const [email, setEmail] = useState("siddharthsingharoy@gmail.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [emailVerified, setEmailVerified] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(false);
   const location = useLocation();
 
   const webcamRef = useRef(null);
