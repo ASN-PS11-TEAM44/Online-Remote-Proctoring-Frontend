@@ -1,32 +1,24 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
+import Webcam from "react-webcam";
 import io from "socket.io-client";
 import { postRequest } from "../utils/serviceCall";
 import "../styles/authentication.css";
 import "../styles/Login.css";
 
+const videoConstraints = {
+  facingMode: "user",
+};
+
 const Login = (props) => {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("siddharthsingharoy@gmail.com");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(true);
   const location = useLocation();
 
-  useEffect(() => {
-    const { state = {} } = location;
-    const { message: stateMessage } = state;
-    if (typeof stateMessage !== "undefined") {
-      setMessage(stateMessage);
-    }
-  }, [location]);
-
-  useEffect(() => {
-    // eslint-disable-next-line no-unused-vars
-    const socket = io(process.env.REACT_APP_BACKEND_URL, {
-      withCredentials: true,
-    });
-  }, []);
+  const webcamRef = useRef(null);
 
   const emailPasswordVerification = () => {
     if (message.length !== 0) setMessage("");
@@ -47,6 +39,42 @@ const Login = (props) => {
         setError(err.response.data.error);
       });
   };
+
+  const mediaError = () => {
+    setError(
+      "Please allow access to your webcam and wait for your webcam to start"
+    );
+  };
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+    return imageSrc;
+  }, [webcamRef]);
+
+  useEffect(() => {
+    const { state = {} } = location;
+    const { message: stateMessage } = state;
+    if (typeof stateMessage !== "undefined") {
+      setMessage(stateMessage);
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (emailVerified) {
+      const socket = io(process.env.REACT_APP_BACKEND_URL, {
+        withCredentials: true,
+      });
+      const transmitImage = setInterval(() => {
+        const imageSrc = capture();
+        if (imageSrc) {
+          socket.emit("login verification", email, imageSrc);
+        }
+      }, 1000 / process.env.REACT_APP_FPS);
+      return () => clearInterval(transmitImage);
+    }
+  }, [capture, email, emailVerified]);
+
   if (!emailVerified) {
     return (
       <>
@@ -108,6 +136,15 @@ const Login = (props) => {
       <div className="container">
         <div className="loginform">
           <h2 className="formhead">Facial Verification</h2>
+          {error.length !== 0 && <p className="errorMsg">{error}</p>}
+          <Webcam
+            audio={false}
+            videoConstraints={videoConstraints}
+            screenshotFormat="image/jpeg"
+            ref={webcamRef}
+            screenshotQuality={1}
+            onUserMediaError={mediaError}
+          />
         </div>
       </div>
     </>
