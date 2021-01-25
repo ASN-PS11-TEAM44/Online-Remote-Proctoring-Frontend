@@ -1,14 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import io from "socket.io-client";
+import { postRequest } from "../utils/serviceCall";
 import "../styles/authentication.css";
 import "../styles/Login.css";
 
-const Login = () => {
+const Login = (props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const { state = {} } = location;
+    const { message: stateMessage } = state;
+    if (typeof stateMessage !== "undefined") {
+      setMessage(stateMessage);
+    }
+  }, [location]);
 
   useEffect(() => {
     // eslint-disable-next-line no-unused-vars
@@ -18,6 +29,7 @@ const Login = () => {
   }, []);
 
   const emailPasswordVerification = () => {
+    if (message.length !== 0) setMessage("");
     if (email.length === 0) {
       setError("Email Address cannot be empty");
       return;
@@ -27,7 +39,13 @@ const Login = () => {
       return;
     }
     if (error.length !== 0) setError("");
-    setEmailVerified(true);
+    postRequest("auth/login", { email, password })
+      .then((_res) => {
+        setEmailVerified(true);
+      })
+      .catch((err) => {
+        setError(err.response.data.error);
+      });
   };
   if (!emailVerified) {
     return (
@@ -44,6 +62,7 @@ const Login = () => {
           <div className="loginform">
             <h2 className="formhead">Login</h2>
             {error.length !== 0 && <p className="errorMsg">{error}</p>}
+            {message.length !== 0 && <p className="successMsg">{message}</p>}
             <label className="label" htmlFor="email">
               Email Address
             </label>

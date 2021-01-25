@@ -3,6 +3,8 @@ import Webcam from "react-webcam";
 import { Link } from "react-router-dom";
 import "../styles/authentication.css";
 import "../styles/Registration.css";
+import { postRequest } from "../utils/serviceCall";
+import { useHistory } from "react-router-dom";
 
 const videoConstraints = {
   facingMode: "user",
@@ -16,12 +18,10 @@ const Registration = () => {
   const [error, setError] = useState("");
 
   const webcamRef = useRef(null);
-  const capture = useCallback(() => {
-    const imageSrc = webcamRef.current.getScreenshot();
-    setImgSrc(imageSrc);
-  }, [webcamRef, setImgSrc]);
+  const history = useHistory();
 
   const register = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     if (email.length === 0) {
       setError("Email Address cannot be empty");
       return;
@@ -43,7 +43,38 @@ const Registration = () => {
       return;
     }
     if (error.length !== 0) setError("");
+    fetch(imgSrc)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const file = new File([blob], "user.jpeg", { type: "image/jpeg" });
+        const formData = new FormData();
+        formData.append("image", file);
+        formData.append("email", email);
+        formData.append("password", password);
+        postRequest("auth/register", formData)
+          .then((_res) => {
+            history.push({
+              pathname: "/login",
+              state: { message: "You have registered successfully" },
+            });
+          })
+          .catch((err) => {
+            setError(err.response.data.error);
+          });
+      });
   };
+
+  const mediaError = () => {
+    setError(
+      "Please allow access to your webcam and wait for your webcam to start"
+    );
+  };
+
+  const capture = useCallback(() => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+    setImgSrc(imageSrc);
+  }, [webcamRef, setImgSrc]);
 
   return (
     <>
@@ -98,6 +129,7 @@ const Registration = () => {
                 screenshotFormat="image/jpeg"
                 ref={webcamRef}
                 screenshotQuality={1}
+                onUserMediaError={mediaError}
               />
 
               <button className="captureBtn" onClick={capture}>

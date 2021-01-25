@@ -45,6 +45,10 @@
   margin-bottom: 10px;
   color: red;
 }
+.successMsg {
+  margin-bottom: 10px;
+  color: green;
+}
 .form-error {
   color: red;
   margin: 0rem;
