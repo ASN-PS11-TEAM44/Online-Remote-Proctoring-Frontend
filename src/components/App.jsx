@@ -2,6 +2,8 @@ import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import { Login } from "./Login.jsx";
 import { Registration } from "./Registration.jsx";
 import { Home } from "./Home.jsx";
+import { AuthenticatedRoute } from "./AuthenticatedRoute.jsx";
+import { Dashboard } from "./Dashboard.jsx";
 
 const App = () => {
   return (
@@ -12,6 +14,9 @@ const App = () => {
         </Route>
         <Route path="/register" exact>
           <Registration />
+        </Route>
+        <Route path="/dashboard" exact>
+          <AuthenticatedRoute path="/dashboard" Component={Dashboard} />
         </Route>
         <Route path="/">
           <Home />

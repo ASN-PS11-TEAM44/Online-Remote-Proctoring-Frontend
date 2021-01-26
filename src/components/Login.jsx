@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useHistory } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import Webcam from "react-webcam";
 import io from "socket.io-client";
+import { loginFunc } from "../actions/authentication.action";
 import { postRequest } from "../utils/serviceCall";
+import { tokenLocalStorageKey } from "../constants/authentication.constant";
+import { encrypt } from "../utils/encryptDecrypt";
 import "../styles/authentication.css";
 import "../styles/Login.css";
 
@@ -17,6 +21,11 @@ const Login = (props) => {
   const [message, setMessage] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
   const location = useLocation();
+  const history = useHistory();
+  const dispatch = useDispatch();
+  const authReducer = useSelector((state) => state.authenticationReducer);
+  const { user } = authReducer;
+  const imageUrl = user ? user.url : "";
 
   const webcamRef = useRef(null);
 
@@ -32,8 +41,9 @@ const Login = (props) => {
     }
     if (error.length !== 0) setError("");
     postRequest("auth/login", { email, password })
-      .then((_res) => {
+      .then((res) => {
         setEmailVerified(true);
+        dispatch(loginFunc(res.data.user));
       })
       .catch((err) => {
         setError(err.response.data.error);
@@ -58,7 +68,9 @@ const Login = (props) => {
     if (typeof stateMessage !== "undefined") {
       setMessage(stateMessage);
     }
-  }, [location]);
+    if (localStorage.getItem(tokenLocalStorageKey) !== null)
+      history.push("/dashboard");
+  }, [history, location]);
 
   useEffect(() => {
     if (emailVerified) {
@@ -68,12 +80,24 @@ const Login = (props) => {
       const transmitImage = setInterval(() => {
         const imageSrc = capture();
         if (imageSrc) {
-          socket.emit("login verification", email, imageSrc);
+          socket.emit(
+            "login verification",
+            email,
+            imageSrc,
+            imageUrl,
+            (res, token) => {
+              if (res && localStorage.getItem(tokenLocalStorageKey) === null) {
+                console.log(token)
+                localStorage.setItem(tokenLocalStorageKey, encrypt(token));
+                history.push("/dashboard");
+              }
+            }
+          );
         }
       }, 1000 / process.env.REACT_APP_FPS);
       return () => clearInterval(transmitImage);
     }
-  }, [capture, email, emailVerified]);
+  }, [imageUrl, capture, email, emailVerified, history]);
 
   if (!emailVerified) {
     return (
