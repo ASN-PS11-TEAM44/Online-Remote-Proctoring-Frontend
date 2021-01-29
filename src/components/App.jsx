@@ -4,6 +4,7 @@ import { Registration } from "./Registration.jsx";
 import { Home } from "./Home.jsx";
 import { AuthenticatedRoute } from "./AuthenticatedRoute.jsx";
 import { Dashboard } from "./Dashboard.jsx";
+import { Test } from "./Test.jsx";
 
 const App = () => {
   return (
@@ -17,6 +18,9 @@ const App = () => {
         </Route>
         <Route path="/dashboard" exact>
           <AuthenticatedRoute path="/dashboard" Component={Dashboard} />
+        </Route>
+        <Route path="/exam" exact>
+          <AuthenticatedRoute path="/exam" Component={Test} />
         </Route>
         <Route path="/">
           <Home />

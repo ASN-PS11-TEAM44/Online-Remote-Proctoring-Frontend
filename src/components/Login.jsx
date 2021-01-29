@@ -87,7 +87,6 @@ const Login = (props) => {
             imageUrl,
             (res, token) => {
               if (res && localStorage.getItem(tokenLocalStorageKey) === null) {
-                console.log(token)
                 localStorage.setItem(tokenLocalStorageKey, encrypt(token));
                 history.push("/dashboard");
               }
