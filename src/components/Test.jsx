@@ -109,7 +109,6 @@ const Test = () => {
       />
     );
   };
-  console.log(answer);
   return <div id="test_container">{getClassBasedOnEnv()}</div>;
 };
 

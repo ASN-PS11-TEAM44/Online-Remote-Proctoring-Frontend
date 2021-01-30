@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "@material-ui/core/Button";
 import Webcam from "react-webcam";
+import io from "socket.io-client";
 import Swal from "sweetalert2";
 import "../styles/env.css";
 
@@ -21,12 +22,13 @@ const ValidateEnvironment = (props) => {
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMicrophoneOn, setIsMicrophoneOn] = useState(false);
   const [isSoundWorking, setIsSoundWorking] = useState(false);
-  const [isBrightnessCorrect, setIsBrightnessCorrect] = useState(true);
+  const [isBrightnessCorrect, setIsBrightnessCorrect] = useState(false);
   const [startValidation, setStartValidation] = useState(false);
   const [countMicrophoneValidVolume, setCountMicrophoneValidVolume] = useState(
     0
   );
   const [error, setError] = useState("");
+  const webcamRef = useRef(null);
   const { callback, size, message } = props;
 
   const goFullScreen = (element) => {
@@ -109,6 +111,31 @@ const ValidateEnvironment = (props) => {
       setIsFullScreen(false);
     }
   }, [isFullScreen, size]);
+
+  const capture = useCallback(() => {
+    if (!webcamRef.current) return;
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+    return imageSrc;
+  }, [webcamRef]);
+
+  useEffect(() => {
+    const socket = io(process.env.REACT_APP_BACKEND_URL, {
+      withCredentials: true,
+    });
+    const transmitImage = setInterval(() => {
+      const imageSrc = capture();
+      if (imageSrc) {
+        socket.emit("brightness validation", imageSrc, (res) => {
+          console.log(res);
+          if (res !== isBrightnessCorrect) {
+            setIsBrightnessCorrect(res);
+          }
+        });
+      }
+    }, 1000 / process.env.REACT_APP_FPS);
+    return () => clearInterval(transmitImage);
+  }, [capture, isBrightnessCorrect]);
 
   // Checks for audio streams
   useEffect(() => {
@@ -222,6 +249,7 @@ const ValidateEnvironment = (props) => {
             videoConstraints={videoConstraints}
             onUserMediaError={handleMediaError}
             onUserMedia={handleMediaSuccess}
+            ref={webcamRef}
           />
           {!isMicrophoneOn && (
             <>
