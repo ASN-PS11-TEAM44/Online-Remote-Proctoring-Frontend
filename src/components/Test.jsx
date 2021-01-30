@@ -3,6 +3,7 @@ import { useLocation, useHistory } from "react-router-dom";
 import { ValidateEnvironment } from "./ValidateEnvironment.jsx";
 import { LoadExam } from "./LoadExam.jsx";
 import { StartTest } from "./StartTest.jsx";
+import { postRequest } from "../utils/serviceCall.js";
 
 const Test = () => {
   const location = useLocation();
@@ -20,13 +21,13 @@ const Test = () => {
   useEffect(() => {
     const updateSize = () => {
       setSize([window.innerWidth, window.innerHeight]);
-      if (testStarted) {
+      if (testStarted || (envValidated)) {
         if (!userViolation) setUserViolation(true);
       }
     };
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
-  }, [testStarted, userViolation]);
+  }, [envValidated, testStarted, userViolation]);
 
   useEffect(() => {
     const { state = {} } = location;
@@ -63,6 +64,11 @@ const Test = () => {
       }
       return ans;
     });
+    postRequest("api/exam/answer", {
+      examId: examID,
+      questionId: questionId,
+      optionId: optionId,
+    }).then((_res) => {});
     setAnswer(answerList);
   };
 

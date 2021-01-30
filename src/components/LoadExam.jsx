@@ -3,7 +3,7 @@ import { postRequest } from "../utils/serviceCall";
 import "../styles/env.css";
 
 const LoadExam = (props) => {
-  const [timer, setTimer] = useState(5);
+  const [timer, setTimer] = useState(15);
   const {
     callback,
     setQuestions,
@@ -29,10 +29,27 @@ const LoadExam = (props) => {
   useEffect(() => {
     postRequest("api/exam/question", { examId: examId }).then((res) => {
       setQuestions(res.data.questions);
-      const answerMap = res.data.questions.map((question) => {
-        return { questionId: question.id, optionId: "" };
+      postRequest("api/exam/fetch/answer", {
+        examId: examId,
+      }).then((response) => {
+        const answerMap = res.data.questions.map((question) => {
+          return { questionId: question.id, optionId: "" };
+        });
+        const answers = response.data.answers;
+        let previouslySavedAnswers = answers;
+        const savedAnswerMap = answerMap.map((ans) => {
+          let optionId = "";
+          const findSavedAnswer = previouslySavedAnswers.filter(
+            (answ) => answ.questionId === ans.questionId
+          );
+          if (findSavedAnswer.length > 0) {
+            optionId = `${findSavedAnswer[0].optionId}`;
+            return { questionId: ans.questionId, optionId: optionId };
+          }
+          return ans;
+        });
+        setAnswer(savedAnswerMap);
       });
-      setAnswer(answerMap);
     });
   }, [examId, setAnswer, setQuestions]);
 

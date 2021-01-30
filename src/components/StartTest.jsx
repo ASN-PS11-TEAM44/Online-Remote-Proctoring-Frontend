@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { Prompt } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import Webcam from "react-webcam";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
@@ -8,6 +8,8 @@ import DialogContent from "@material-ui/core/DialogContent";
 import Calculator from "awesome-react-calculator";
 import IconButton from "@material-ui/core/IconButton";
 import Pagination from "@material-ui/lab/Pagination";
+import Snackbar from "@material-ui/core/Snackbar";
+import MuiAlert from "@material-ui/lab/Alert";
 
 import { postRequest } from "../utils/serviceCall";
 import { Timer } from "./Timer.jsx";
@@ -15,10 +17,13 @@ import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion.jsx";
 import calculatorLogo from "../images/keys.png";
 
 import "../styles/test.css";
+import Swal from "sweetalert2";
 
 const videoConstraints = {
   facingMode: "user",
 };
+
+const Alert = (props) => <MuiAlert elevation={6} variant="filled" {...props} />;
 
 const StartTest = (props) => {
   const {
@@ -36,10 +41,44 @@ const StartTest = (props) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [awayTimer, setAwayTimer] = useState(0);
+  const [openSnackBar, setOpenSnackBar] = useState(false);
+  const [error, setError] = useState("");
+
+  const history = useHistory();
 
   const handleChange = (_event, value) => {
     setCurrentQuestion(value - 1);
   };
+
+  const endTest = () => {
+    Swal.fire({
+      title: "",
+      text: "Are you sure you want to end the test ?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        postRequest("api/exam/end", { examId: examDetail.id }).then((_res) => {
+          history.push({
+            pathname: "/dashboard",
+          });
+        });
+      }
+    });
+  };
+
+  useEffect(() => {
+    const preventClick = (event) => {
+      setError("Right click is disabled");
+      setOpenSnackBar(true);
+      event.preventDefault();
+    };
+    document.addEventListener("contextmenu", preventClick);
+    return () => document.removeEventListener("contextmenu", preventClick);
+  }, []);
 
   useEffect(() => {
     const elapseTimer = setInterval(() => {
@@ -57,6 +96,8 @@ const StartTest = (props) => {
       return () => clearInterval(awayTimerInterval);
     } else {
       if (awayTimer > 0) {
+        setError(`You were away from the test for ${awayTimer} seconds`);
+        setOpenSnackBar(true);
         setAwayTimer(0);
       }
     }
@@ -214,13 +255,29 @@ const StartTest = (props) => {
     return () => clearInterval(mediaCheck);
   }, [checkMedia]);
 
+  window.addEventListener("popstate", (event) => {
+    alert("You message");
+  });
+
+  const handleClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setOpenSnackBar(false);
+  };
+
   return (
     <>
-      <Prompt
-        message={(location) =>
-          `Are you sure you want to go to ${location.pathname}`
-        }
-      />
+      <Snackbar
+        open={openSnackBar}
+        autoHideDuration={6000}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      >
+        <Alert onClose={handleClose} severity="warning">
+          {error}
+        </Alert>
+      </Snackbar>
       <Dialog open={!isPageVisible && awayTimer > 0}>
         <DialogContent>Away for {awayTimer} seconds</DialogContent>
       </Dialog>
@@ -240,10 +297,12 @@ const StartTest = (props) => {
           <h3>Duration : {examDetail.duration} minutes</h3>
           <h3>
             Start Time : {new Date(examDetail.startTime).toDateString()}
+            {", "}
             {new Date(examDetail.startTime).toLocaleTimeString()}
           </h3>
           <h3>
             End Time : {new Date(examDetail.endTime).toDateString()}
+            {", "}
             {new Date(examDetail.endTime).toLocaleTimeString()}
           </h3>
         </div>
@@ -281,6 +340,60 @@ const StartTest = (props) => {
           currentId={currentQuestion}
           answerMCQ={answerMCQ}
         />
+        {currentQuestion === 0 && (
+          <Button
+            className="navBtn"
+            variant="outlined"
+            color="primary"
+            disabled
+          >
+            Previous
+          </Button>
+        )}
+        {currentQuestion !== 0 && (
+          <Button
+            className="navBtn"
+            variant="outlined"
+            color="primary"
+            onClick={() =>
+              setCurrentQuestion((currentQuestion) => currentQuestion - 1)
+            }
+          >
+            Previous
+          </Button>
+        )}
+        {currentQuestion + 1 === questions.length && (
+          <Button
+            className="navBtn"
+            variant="outlined"
+            color="primary"
+            disabled
+          >
+            Next
+          </Button>
+        )}
+        {currentQuestion + 1 === questions.length && (
+          <Button
+            className="navBtn"
+            variant="contained"
+            color="secondary"
+            onClick={endTest}
+          >
+            End Test
+          </Button>
+        )}
+        {currentQuestion + 1 !== questions.length && (
+          <Button
+            className="navBtn"
+            variant="outlined"
+            color="primary"
+            onClick={() =>
+              setCurrentQuestion((currentQuestion) => currentQuestion + 1)
+            }
+          >
+            Next
+          </Button>
+        )}
       </div>
       <div className="webcam_container">
         <Webcam

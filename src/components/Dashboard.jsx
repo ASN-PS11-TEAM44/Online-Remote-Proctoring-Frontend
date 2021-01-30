@@ -46,6 +46,8 @@ const Dashboard = () => {
         new Date() >= new Date(exam.startTime) &&
         new Date() <= new Date(exam.endTime),
       id: exam.id,
+      isComplete:
+        exam.testAttempts.length !== 0 && exam.testAttempts[0].complete,
     }));
     setExam(examList);
   };
@@ -79,7 +81,7 @@ const Dashboard = () => {
           </Typography>
         </CardContent>
         <CardActions>
-          {exam.isActive && (
+          {exam.isActive && !exam.isComplete && (
             <Button
               size="small"
               color="secondary"
@@ -89,11 +91,17 @@ const Dashboard = () => {
               Start Exam
             </Button>
           )}
-          {!exam.isActive && (
-            <Button size="small" color="secondary" variant="contained" disabled>
-              Start Exam
-            </Button>
-          )}
+          {!exam.isActive ||
+            (exam.isComplete && (
+              <Button
+                size="small"
+                color="secondary"
+                variant="contained"
+                disabled
+              >
+                {exam.isComplete ? "Exam Completed" : "Start Exam"}
+              </Button>
+            ))}
         </CardActions>
       </Card>
     ));
