@@ -7,11 +7,15 @@ import { StartTest } from "./StartTest.jsx";
 const Test = () => {
   const location = useLocation();
   const history = useHistory();
-  const [envValidated, setEnvValidated] = useState(true);
-  const [testStarted, setTestStarted] = useState(true);
+  const [envValidated, setEnvValidated] = useState(false);
+  const [testStarted, setTestStarted] = useState(false);
   const [size, setSize] = useState([0, 0]);
   const [examID, setExamID] = useState(null);
   const [userViolation, setUserViolation] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [examDetail, setExamDetail] = useState({});
+  const [answer, setAnswer] = useState({});
+  const [timeElapsed, setTimeElapsed] = useState(0);
 
   useEffect(() => {
     const updateSize = () => {
@@ -52,6 +56,16 @@ const Test = () => {
     setUserViolation(true);
   };
 
+  const answerMCQ = (questionId, optionId) => {
+    const answerList = answer.map((ans) => {
+      if (ans.questionId === questionId) {
+        return { questionId: questionId, optionId: optionId };
+      }
+      return ans;
+    });
+    setAnswer(answerList);
+  };
+
   const getClassBasedOnEnv = () => {
     if (!envValidated || userViolation) {
       return (
@@ -67,10 +81,29 @@ const Test = () => {
       );
     }
     if (!testStarted) {
-      return <LoadExam callback={startTest} />;
+      return (
+        <LoadExam
+          callback={startTest}
+          examId={examID}
+          setQuestions={setQuestions}
+          setExamDetail={setExamDetail}
+          setAnswer={setAnswer}
+          setTimeElapsed={setTimeElapsed}
+        />
+      );
     }
-    return <StartTest handleUserViolation={handleUserViolation} />;
+    return (
+      <StartTest
+        handleUserViolation={handleUserViolation}
+        questions={questions}
+        examDetail={examDetail}
+        answer={answer}
+        answerMCQ={answerMCQ}
+        timeElapsed={timeElapsed}
+      />
+    );
   };
+  console.log(answer);
   return <div id="test_container">{getClassBasedOnEnv()}</div>;
 };
 

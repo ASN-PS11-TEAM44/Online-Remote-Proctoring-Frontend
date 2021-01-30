@@ -1,24 +1,65 @@
 import React, { useEffect, useState } from "react";
+import { postRequest } from "../utils/serviceCall";
 import "../styles/env.css";
 
 const LoadExam = (props) => {
-  const [timer, setTimer] = useState(15);
-  const { callback } = props;
-
-  if (timer === -1) {
-    callback();
-  }
+  const [timer, setTimer] = useState(5);
+  const {
+    callback,
+    setQuestions,
+    setExamDetail,
+    setAnswer,
+    setTimeElapsed,
+    examId,
+  } = props;
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
-      setTimer((timer) => timer - 1);
+      if (timer !== -1) setTimer((timer) => timer - 1);
     }, 1000);
     return () => clearInterval(timerInterval);
-  });
+  }, [timer]);
+
+  useEffect(() => {
+    postRequest("api/exam/details", { examId: examId }).then((res) => {
+      setExamDetail(res.data.exam);
+    });
+  }, [examId, setExamDetail]);
+
+  useEffect(() => {
+    postRequest("api/exam/question", { examId: examId }).then((res) => {
+      setQuestions(res.data.questions);
+      const answerMap = res.data.questions.map((question) => {
+        return { questionId: question.id, optionId: "" };
+      });
+      setAnswer(answerMap);
+    });
+  }, [examId, setAnswer, setQuestions]);
+
+  useEffect(() => {
+    postRequest("api/exam/fetch/attempt", { examId: examId }).then((res) => {
+      const attempt = res.data.attempt;
+      if (!attempt) {
+        postRequest("api/exam/attempt", {
+          examId: examId,
+        }).then(() => {});
+      } else {
+        setTimeElapsed(attempt.timeElapsed);
+      }
+    });
+  }, [examId, setTimeElapsed]);
+
+  useEffect(() => {
+    if (timer === -1) {
+      callback();
+    }
+  }, [callback, timer]);
 
   return (
     <div className="load_container">
-      <h2 className="load_header">Your exam will begin in {timer} {timer > 1 ? 'seconds' : 'second'}</h2>
+      <h2 className="load_header">
+        Your exam will begin in {timer} {timer > 1 ? "seconds" : "second"}
+      </h2>
       <h3 style={{ textDecoration: "underline" }}>Instructions</h3>
       <div className="env_points">
         <li>Do not exit fullscreen mode</li>

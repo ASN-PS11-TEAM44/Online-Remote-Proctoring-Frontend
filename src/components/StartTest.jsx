@@ -9,6 +9,7 @@ import Calculator from "awesome-react-calculator";
 import IconButton from "@material-ui/core/IconButton";
 import Pagination from "@material-ui/lab/Pagination";
 
+import { postRequest } from "../utils/serviceCall";
 import { Timer } from "./Timer.jsx";
 import { MultipleChoiceQuestion } from "./MultipleChoiceQuestion.jsx";
 import calculatorLogo from "../images/keys.png";
@@ -19,11 +20,18 @@ const videoConstraints = {
   facingMode: "user",
 };
 
-// @fix : Timer needs to be refreshed went page is hidden
-
 const StartTest = (props) => {
-  const { handleUserViolation } = props;
-  const [timeLeft, setTimeLeft] = useState(100 * 60);
+  const {
+    handleUserViolation,
+    examDetail,
+    questions,
+    answer,
+    answerMCQ,
+    timeElapsed,
+  } = props;
+  const [timeLeft, setTimeLeft] = useState(
+    examDetail.duration * 60 - timeElapsed
+  );
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isPageVisible, setIsPageVisible] = useState(true);
@@ -32,6 +40,13 @@ const StartTest = (props) => {
   const handleChange = (_event, value) => {
     setCurrentQuestion(value - 1);
   };
+
+  useEffect(() => {
+    const elapseTimer = setInterval(() => {
+      postRequest("api/exam/attempt", { examId: examDetail.id });
+    }, 2000);
+    return () => clearInterval(elapseTimer);
+  }, [examDetail.id, isPageVisible]);
 
   useEffect(() => {
     if (!isPageVisible) {
@@ -162,7 +177,13 @@ const StartTest = (props) => {
       setTimeLeft((timeLeft) => timeLeft - 1);
     }, 1000);
     return () => clearInterval(timerInterval);
-  });
+  }, [isPageVisible]);
+
+  const getAnswerForQuestion = () => {
+    return answer.filter(
+      (ans) => ans.questionId === questions[currentQuestion].id
+    )[0];
+  };
 
   const closeCalculator = () => {
     setCalculatorOpen(false);
@@ -214,11 +235,17 @@ const StartTest = (props) => {
         </DialogActions>
       </Dialog>
       <div className="test_container">
-        <h1 className="test_header">Test Title</h1>
+        <h1 className="test_header">{examDetail.title}</h1>
         <div className="test_details">
-          <h3>Duration : 100 minutes</h3>
-          <h3>Start Time : {new Date().toDateString()}</h3>
-          <h3>End Time : {new Date().toDateString()}</h3>
+          <h3>Duration : {examDetail.duration} minutes</h3>
+          <h3>
+            Start Time : {new Date(examDetail.startTime).toDateString()}
+            {new Date(examDetail.startTime).toLocaleTimeString()}
+          </h3>
+          <h3>
+            End Time : {new Date(examDetail.endTime).toDateString()}
+            {new Date(examDetail.endTime).toLocaleTimeString()}
+          </h3>
         </div>
       </div>
       <div className="question_container">
@@ -230,7 +257,7 @@ const StartTest = (props) => {
             <Pagination
               variant="outlined"
               color="primary"
-              count={10}
+              count={questions.length}
               page={currentQuestion + 1}
               onChange={handleChange}
             />
@@ -248,7 +275,12 @@ const StartTest = (props) => {
             </IconButton>
           </div>
         </div>
-        <MultipleChoiceQuestion />
+        <MultipleChoiceQuestion
+          question={questions[currentQuestion]}
+          selectedAnswer={getAnswerForQuestion()}
+          currentId={currentQuestion}
+          answerMCQ={answerMCQ}
+        />
       </div>
       <div className="webcam_container">
         <Webcam
