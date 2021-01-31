@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import Webcam from "react-webcam";
+import io from "socket.io-client";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -43,12 +44,20 @@ const StartTest = (props) => {
   const [awayTimer, setAwayTimer] = useState(0);
   const [openSnackBar, setOpenSnackBar] = useState(false);
   const [error, setError] = useState("");
+  const webcamRef = useRef(null);
 
   const history = useHistory();
 
   const handleChange = (_event, value) => {
     setCurrentQuestion(value - 1);
   };
+
+  const capture = useCallback(() => {
+    if (!webcamRef.current) return;
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) return;
+    return imageSrc;
+  }, [webcamRef]);
 
   const endTest = () => {
     Swal.fire({
@@ -69,6 +78,19 @@ const StartTest = (props) => {
       }
     });
   };
+
+  useEffect(() => {
+    const socket = io(process.env.REACT_APP_BACKEND_URL, {
+      withCredentials: true,
+    });
+    const transmitImage = setInterval(() => {
+      const imageSrc = capture();
+      if (imageSrc) {
+        socket.emit("exam validation", imageSrc);
+      }
+    }, 1000);
+    return () => clearInterval(transmitImage);
+  }, [capture, history]);
 
   useEffect(() => {
     const preventClick = (event) => {
@@ -250,15 +272,6 @@ const StartTest = (props) => {
       });
   }, [handleUserViolation]);
 
-  useEffect(() => {
-    const mediaCheck = setInterval(checkMedia, 5 * 1000);
-    return () => clearInterval(mediaCheck);
-  }, [checkMedia]);
-
-  window.addEventListener("popstate", (event) => {
-    alert("You message");
-  });
-
   const handleClose = (event, reason) => {
     if (reason === "clickaway") {
       return;
@@ -403,6 +416,7 @@ const StartTest = (props) => {
           videoConstraints={videoConstraints}
           screenshotFormat="image/jpeg"
           onUserMediaError={handleMediaError}
+          ref={webcamRef}
         />
       </div>
     </>
