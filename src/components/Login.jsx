@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useHistory } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import Webcam from "react-webcam";
-import io from "socket.io-client";
+import { socket } from "../constants/socket";
 import { loginFunc } from "../actions/authentication.action";
 import { postRequest } from "../utils/serviceCall";
 import { tokenLocalStorageKey } from "../constants/authentication.constant";
@@ -20,11 +20,13 @@ const Login = (props) => {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [emailVerified, setEmailVerified] = useState(false);
+  const [isStudent, setIsStudent] = useState(true);
   const location = useLocation();
   const history = useHistory();
   const dispatch = useDispatch();
   const authReducer = useSelector((state) => state.authenticationReducer);
-  const { user } = authReducer;
+  let { user } = authReducer;
+  if (user === null) user = {};
   const imageUrl = user ? user.url : "";
 
   const webcamRef = useRef(null);
@@ -44,6 +46,7 @@ const Login = (props) => {
       .then((res) => {
         setEmailVerified(true);
         dispatch(loginFunc(res.data.user));
+        setIsStudent(res.data.user.isStudent);
       })
       .catch((err) => {
         setError(err.response.data.error);
@@ -68,15 +71,14 @@ const Login = (props) => {
     if (typeof stateMessage !== "undefined") {
       setMessage(stateMessage);
     }
-    if (localStorage.getItem(tokenLocalStorageKey) !== null)
-      history.push("/dashboard");
-  }, [history, location]);
+    if (localStorage.getItem(tokenLocalStorageKey) !== null) {
+      if (user.isStudent) history.push("/dashboard");
+      else history.push("/inv/dashboard");
+    }
+  }, [history, location, user.isStudent]);
 
   useEffect(() => {
     if (emailVerified) {
-      const socket = io(process.env.REACT_APP_BACKEND_URL, {
-        withCredentials: true,
-      });
       const transmitImage = setInterval(() => {
         const imageSrc = capture();
         if (imageSrc) {
@@ -88,7 +90,8 @@ const Login = (props) => {
             (res, token) => {
               if (res && localStorage.getItem(tokenLocalStorageKey) === null) {
                 localStorage.setItem(tokenLocalStorageKey, encrypt(token));
-                history.push("/dashboard");
+                if (isStudent) history.push("/dashboard");
+                else history.push("/inv/dashboard");
               }
             }
           );
@@ -96,7 +99,7 @@ const Login = (props) => {
       }, 1000 / process.env.REACT_APP_FPS);
       return () => clearInterval(transmitImage);
     }
-  }, [imageUrl, capture, email, emailVerified, history]);
+  }, [imageUrl, capture, email, emailVerified, history, isStudent]);
 
   if (!emailVerified) {
     return (

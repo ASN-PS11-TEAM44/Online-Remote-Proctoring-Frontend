@@ -27,7 +27,7 @@ const useStyles = makeStyles({
   },
 });
 
-const Dashboard = () => {
+const InvDashboard = () => {
   const [exams, setExam] = useState([]);
   const history = useHistory();
 
@@ -54,7 +54,7 @@ const Dashboard = () => {
 
   const startExam = (examID) => {
     history.push({
-      pathname: "/exam",
+      pathname: "/inv/start",
       state: { examID: examID },
     });
   };
@@ -88,7 +88,7 @@ const Dashboard = () => {
               variant="contained"
               onClick={() => startExam(exam.id)}
             >
-              Start Exam
+              Start Invigilation
             </Button>
           )}
           {!exam.isActive ||
@@ -99,7 +99,7 @@ const Dashboard = () => {
                 variant="contained"
                 disabled
               >
-                {exam.isComplete ? "Exam Completed" : "Start Exam"}
+                {exam.isComplete ? "Exam Completed" : "Start Invigilation"}
               </Button>
             ))}
         </CardActions>
@@ -115,4 +115,4 @@ const Dashboard = () => {
   );
 };
 
-export { Dashboard };
+export { InvDashboard };

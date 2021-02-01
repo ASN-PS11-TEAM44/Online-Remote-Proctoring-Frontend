@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Button from "@material-ui/core/Button";
 import Webcam from "react-webcam";
-import io from "socket.io-client";
+import { socket } from "../constants/socket";
 import Swal from "sweetalert2";
 import "../styles/env.css";
 
@@ -120,9 +120,6 @@ const ValidateEnvironment = (props) => {
   }, [webcamRef]);
 
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_BACKEND_URL, {
-      withCredentials: true,
-    });
     const transmitImage = setInterval(() => {
       const imageSrc = capture();
       if (imageSrc) {

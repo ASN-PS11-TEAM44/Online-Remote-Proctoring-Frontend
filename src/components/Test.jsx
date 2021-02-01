@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useHistory } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { socket } from "../constants/socket";
 import { ValidateEnvironment } from "./ValidateEnvironment.jsx";
 import { LoadExam } from "./LoadExam.jsx";
 import { StartTest } from "./StartTest.jsx";
@@ -18,16 +20,33 @@ const Test = () => {
   const [answer, setAnswer] = useState({});
   const [timeElapsed, setTimeElapsed] = useState(0);
 
+  const authReducer = useSelector((state) => state.authenticationReducer);
+  const { user = {} } = authReducer;
+
+  useEffect(() => {
+    socket.emit("connect to room", user.email);
+  }, [user.email]);
+
+  const addUserActivity = useCallback(
+    (message, status) => {
+      socket.emit("user activity", examDetail.id, user.email, message, status);
+    },
+    [examDetail.id, user.email]
+  );
+
   useEffect(() => {
     const updateSize = () => {
       setSize([window.innerWidth, window.innerHeight]);
-      if (testStarted || (envValidated)) {
-        if (!userViolation) setUserViolation(true);
+      if (testStarted || envValidated) {
+        if (!userViolation) {
+          setUserViolation(true);
+          addUserActivity("User tried to adjust browser size", 1);
+        }
       }
     };
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
-  }, [envValidated, testStarted, userViolation]);
+  }, [addUserActivity, envValidated, testStarted, userViolation]);
 
   useEffect(() => {
     const { state = {} } = location;
@@ -106,6 +125,7 @@ const Test = () => {
         answer={answer}
         answerMCQ={answerMCQ}
         timeElapsed={timeElapsed}
+        addUserActivity={addUserActivity}
       />
     );
   };

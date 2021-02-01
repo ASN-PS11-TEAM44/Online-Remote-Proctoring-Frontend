@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import Webcam from "react-webcam";
-import io from "socket.io-client";
+import { socket } from "../constants/socket";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -34,6 +34,7 @@ const StartTest = (props) => {
     answer,
     answerMCQ,
     timeElapsed,
+    addUserActivity,
   } = props;
   const [timeLeft, setTimeLeft] = useState(
     examDetail.duration * 60 - timeElapsed
@@ -80,9 +81,6 @@ const StartTest = (props) => {
   };
 
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_BACKEND_URL, {
-      withCredentials: true,
-    });
     const transmitImage = setInterval(() => {
       const imageSrc = capture();
       if (imageSrc) {
@@ -96,11 +94,12 @@ const StartTest = (props) => {
     const preventClick = (event) => {
       setError("Right click is disabled");
       setOpenSnackBar(true);
+      addUserActivity("User tried to right click", 0);
       event.preventDefault();
     };
     document.addEventListener("contextmenu", preventClick);
     return () => document.removeEventListener("contextmenu", preventClick);
-  }, []);
+  }, [addUserActivity]);
 
   useEffect(() => {
     const elapseTimer = setInterval(() => {
@@ -120,10 +119,11 @@ const StartTest = (props) => {
       if (awayTimer > 0) {
         setError(`You were away from the test for ${awayTimer} seconds`);
         setOpenSnackBar(true);
+        addUserActivity(`User was away from the test for ${awayTimer} seconds`, 2);
         setAwayTimer(0);
       }
     }
-  }, [awayTimer, isPageVisible]);
+  }, [addUserActivity, awayTimer, isPageVisible]);
 
   useEffect(() => {
     let browserPrefixes = ["moz", "ms", "o", "webkit"];
@@ -256,21 +256,21 @@ const StartTest = (props) => {
     handleUserViolation();
   };
 
-  const checkMedia = useCallback(() => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true, video: true })
-      .then(function (stream) {
-        if (
-          stream.getVideoTracks().length <= 0 ||
-          stream.getAudioTracks().length <= 0
-        ) {
-          handleUserViolation();
-        }
-      })
-      .catch((_err) => {
-        handleUserViolation();
-      });
-  }, [handleUserViolation]);
+  // const checkMedia = useCallback(() => {
+  //   navigator.mediaDevices
+  //     .getUserMedia({ audio: true, video: true })
+  //     .then(function (stream) {
+  //       if (
+  //         stream.getVideoTracks().length <= 0 ||
+  //         stream.getAudioTracks().length <= 0
+  //       ) {
+  //         handleUserViolation();
+  //       }
+  //     })
+  //     .catch((_err) => {
+  //       handleUserViolation();
+  //     });
+  // }, [handleUserViolation]);
 
   const handleClose = (event, reason) => {
     if (reason === "clickaway") {

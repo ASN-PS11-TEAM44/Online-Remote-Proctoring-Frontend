@@ -4,6 +4,8 @@ import { Registration } from "./Registration.jsx";
 import { Home } from "./Home.jsx";
 import { AuthenticatedRoute } from "./AuthenticatedRoute.jsx";
 import { Dashboard } from "./Dashboard.jsx";
+import { InvDashboard } from "./InvigilatorDashboard.jsx";
+import { Invigilate } from "./Invigilate.jsx";
 import { Test } from "./Test.jsx";
 
 const App = () => {
@@ -17,10 +19,28 @@ const App = () => {
           <Registration />
         </Route>
         <Route path="/dashboard" exact>
-          <AuthenticatedRoute path="/dashboard" Component={Dashboard} />
+          <AuthenticatedRoute
+            forUser="student"
+            path="/dashboard"
+            Component={Dashboard}
+          />
         </Route>
         <Route path="/exam" exact>
-          <AuthenticatedRoute path="/exam" Component={Test} />
+          <AuthenticatedRoute path="/exam" forUser="student" Component={Test} />
+        </Route>
+        <Route path="/inv/dashboard" exact>
+          <AuthenticatedRoute
+            path="/inv/dashboard"
+            forUser="invigilator"
+            Component={InvDashboard}
+          />
+        </Route>
+        <Route path="/inv/start" exact>
+          <AuthenticatedRoute
+            path="/inv/start"
+            forUser="invigilator"
+            Component={Invigilate}
+          />
         </Route>
         <Route path="/">
           <Home />
