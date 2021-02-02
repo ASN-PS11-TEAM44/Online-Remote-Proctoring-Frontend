@@ -10,7 +10,7 @@ import { postRequest } from "../utils/serviceCall.js";
 const Test = () => {
   const location = useLocation();
   const history = useHistory();
-  const [envValidated, setEnvValidated] = useState(false);
+  const [envValidated, setEnvValidated] = useState(true);
   const [testStarted, setTestStarted] = useState(false);
   const [size, setSize] = useState([0, 0]);
   const [examID, setExamID] = useState(null);
@@ -126,6 +126,7 @@ const Test = () => {
         answerMCQ={answerMCQ}
         timeElapsed={timeElapsed}
         addUserActivity={addUserActivity}
+        userEmail={user.email}
       />
     );
   };

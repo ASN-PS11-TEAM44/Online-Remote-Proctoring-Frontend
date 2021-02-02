@@ -4,6 +4,7 @@ import { makeStyles } from "@material-ui/core/styles";
 import { postRequest } from "../utils/serviceCall";
 import { Header } from "./Header.jsx";
 import { socket } from "../constants/socket";
+import Swal from "sweetalert2";
 import { useSelector } from "react-redux";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
@@ -13,6 +14,7 @@ import Avatar from "@material-ui/core/Avatar";
 import PhotoIcon from "@material-ui/icons/Photo";
 import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import Divider from "@material-ui/core/Divider";
+import MuiAlert from "@material-ui/lab/Alert";
 import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -26,6 +28,8 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: theme.palette.background.paper,
   },
 }));
+
+const Alert = (props) => <MuiAlert elevation={6} variant="filled" {...props} />;
 
 const Invigilate = () => {
   const classes = useStyles();
@@ -55,7 +59,7 @@ const Invigilate = () => {
       return;
     }
 
-    setOpen({ status: false, mssg: "" });
+    setOpenSnack({ status: false, mssg: "" });
   };
 
   useEffect(() => {
@@ -115,6 +119,22 @@ const Invigilate = () => {
       </div>
     ));
 
+  const endTest = () => {
+    const studentEmail = open.email;
+    handleClose();
+    Swal.fire({
+      title: `Are you sure you want to end the test for ${studentEmail}?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        socket.emit("end test", studentEmail);
+      }
+    });
+  };
+
   const getUserActivity = () =>
     activity.map((act, index) => (
       <div key={index}>
@@ -152,10 +172,14 @@ const Invigilate = () => {
           horizontal: "left",
         }}
         open={openSnack.status}
-        autoHideDuration={6000}
+        autoHideDuration={3000}
         onClose={handleCloseSnack}
         message={openSnack.mssg}
-      />
+      >
+        <Alert onClose={handleCloseSnack} severity="warning">
+          {openSnack.mssg}
+        </Alert>
+      </Snackbar>
       <Header />
       <div
         style={{
@@ -183,6 +207,9 @@ const Invigilate = () => {
         <DialogActions>
           <Button onClick={handleClose} color="primary">
             Cancel
+          </Button>
+          <Button onClick={endTest} color="primary">
+            End Test
           </Button>
         </DialogActions>
       </Dialog>

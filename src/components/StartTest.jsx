@@ -35,6 +35,7 @@ const StartTest = (props) => {
     answerMCQ,
     timeElapsed,
     addUserActivity,
+    userEmail,
   } = props;
   const [timeLeft, setTimeLeft] = useState(
     examDetail.duration * 60 - timeElapsed
@@ -55,7 +56,10 @@ const StartTest = (props) => {
 
   const capture = useCallback(() => {
     if (!webcamRef.current) return;
-    const imageSrc = webcamRef.current.getScreenshot();
+    const imageSrc = webcamRef.current.getScreenshot({
+      width: 854,
+      height: 480,
+    });
     if (!imageSrc) return;
     return imageSrc;
   }, [webcamRef]);
@@ -81,14 +85,42 @@ const StartTest = (props) => {
   };
 
   useEffect(() => {
+    socket.on("end test request", () => {
+      postRequest("api/exam/end", { examId: examDetail.id }).then((_res) => {
+        history.push({
+          pathname: "/dashboard",
+        });
+      });
+    });
+    // socket.on("user activity error message", (message) => {
+    //   console.log(message);
+    //   // setError(message.message);
+    //   // setOpenSnackBar(true);
+    // });
+  });
+
+  useEffect(() => {
     const transmitImage = setInterval(() => {
       const imageSrc = capture();
       if (imageSrc) {
-        socket.emit("exam validation", imageSrc);
+        socket.emit(
+          "exam validation",
+          examDetail.id,
+          userEmail,
+          imageSrc,
+          (status, msg) => {
+            if (status) {
+              if (error !== msg) {
+                setError(msg);
+                setOpenSnackBar(true);
+              }
+            }
+          }
+        );
       }
     }, 1000);
     return () => clearInterval(transmitImage);
-  }, [capture, history]);
+  }, [capture, error, examDetail.id, history, userEmail]);
 
   useEffect(() => {
     const preventClick = (event) => {
@@ -119,7 +151,10 @@ const StartTest = (props) => {
       if (awayTimer > 0) {
         setError(`You were away from the test for ${awayTimer} seconds`);
         setOpenSnackBar(true);
-        addUserActivity(`User was away from the test for ${awayTimer} seconds`, 2);
+        addUserActivity(
+          `User was away from the test for ${awayTimer} seconds`,
+          2
+        );
         setAwayTimer(0);
       }
     }
