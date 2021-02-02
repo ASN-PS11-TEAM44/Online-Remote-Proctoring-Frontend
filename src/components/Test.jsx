@@ -10,7 +10,7 @@ import { postRequest } from "../utils/serviceCall.js";
 const Test = () => {
   const location = useLocation();
   const history = useHistory();
-  const [envValidated, setEnvValidated] = useState(true);
+  const [envValidated, setEnvValidated] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
   const [size, setSize] = useState([0, 0]);
   const [examID, setExamID] = useState(null);
@@ -28,25 +28,46 @@ const Test = () => {
   }, [user.email]);
 
   const addUserActivity = useCallback(
-    (message, status) => {
-      socket.emit("user activity", examDetail.id, user.email, message, status);
+    (message, status, type) => {
+      socket.emit(
+        "user activity",
+        examDetail.id,
+        user.email,
+        message,
+        status,
+        type,
+        (res) => {
+          if (res) {
+            postRequest("api/exam/end", { examId: examDetail.id }).then(
+              (_res) => {
+                history.push({
+                  pathname: "/dashboard",
+                });
+              }
+            );
+          }
+        }
+      );
     },
-    [examDetail.id, user.email]
+    [examDetail.id, history, user.email]
   );
 
   useEffect(() => {
     const updateSize = () => {
       setSize([window.innerWidth, window.innerHeight]);
       if (testStarted || envValidated) {
+        if (examDetail.allowBrowserSizeChange) {
+          return;
+        }
         if (!userViolation) {
           setUserViolation(true);
-          addUserActivity("User tried to adjust browser size", 1);
+          addUserActivity("User tried to adjust browser size", 1, "size");
         }
       }
     };
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
-  }, [addUserActivity, envValidated, testStarted, userViolation]);
+  }, [addUserActivity, envValidated, testStarted, userViolation, examDetail]);
 
   useEffect(() => {
     const { state = {} } = location;

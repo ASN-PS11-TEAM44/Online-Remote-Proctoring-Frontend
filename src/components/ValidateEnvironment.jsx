@@ -124,7 +124,6 @@ const ValidateEnvironment = (props) => {
       const imageSrc = capture();
       if (imageSrc) {
         socket.emit("brightness validation", imageSrc, (res) => {
-          console.log(res);
           if (res !== isBrightnessCorrect) {
             setIsBrightnessCorrect(res);
           }

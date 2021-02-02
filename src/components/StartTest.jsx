@@ -11,6 +11,10 @@ import IconButton from "@material-ui/core/IconButton";
 import Pagination from "@material-ui/lab/Pagination";
 import Snackbar from "@material-ui/core/Snackbar";
 import MuiAlert from "@material-ui/lab/Alert";
+import RecordVoiceOverIcon from "@material-ui/icons/RecordVoiceOver";
+import SpeechRecognition, {
+  useSpeechRecognition,
+} from "react-speech-recognition";
 
 import { postRequest } from "../utils/serviceCall";
 import { Timer } from "./Timer.jsx";
@@ -40,7 +44,9 @@ const StartTest = (props) => {
   const [timeLeft, setTimeLeft] = useState(
     examDetail.duration * 60 - timeElapsed
   );
+  const { transcript } = useSpeechRecognition();
   const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [isPageVisible, setIsPageVisible] = useState(true);
   const [awayTimer, setAwayTimer] = useState(0);
@@ -63,6 +69,10 @@ const StartTest = (props) => {
     if (!imageSrc) return;
     return imageSrc;
   }, [webcamRef]);
+
+  useEffect(() => {
+    SpeechRecognition.startListening({ continuous: true });
+  }, []);
 
   const endTest = () => {
     Swal.fire({
@@ -108,8 +118,16 @@ const StartTest = (props) => {
           examDetail.id,
           userEmail,
           imageSrc,
-          (status, msg) => {
-            if (status) {
+          (status, msg, endFlag) => {
+            if (endFlag) {
+              postRequest("api/exam/end", { examId: examDetail.id }).then(
+                (_res) => {
+                  history.push({
+                    pathname: "/dashboard",
+                  });
+                }
+              );
+            } else if (status) {
               if (error !== msg) {
                 setError(msg);
                 setOpenSnackBar(true);
@@ -153,7 +171,8 @@ const StartTest = (props) => {
         setOpenSnackBar(true);
         addUserActivity(
           `User was away from the test for ${awayTimer} seconds`,
-          2
+          2,
+          "tab"
         );
         setAwayTimer(0);
       }
@@ -161,6 +180,7 @@ const StartTest = (props) => {
   }, [addUserActivity, awayTimer, isPageVisible]);
 
   useEffect(() => {
+    if (examDetail.allowTabSwitch) return;
     let browserPrefixes = ["moz", "ms", "o", "webkit"];
 
     // get the correct attribute name
@@ -268,7 +288,7 @@ const StartTest = (props) => {
       document.removeEventListener("focus", listener2);
       document.removeEventListener("blur", listener3);
     };
-  }, [isPageVisible]);
+  }, [isPageVisible, examDetail]);
 
   useEffect(() => {
     const timerInterval = setInterval(() => {
@@ -314,6 +334,19 @@ const StartTest = (props) => {
     setOpenSnackBar(false);
   };
 
+  const closeTranscript = () => {
+    setTranscriptOpen(false);
+  };
+
+  if (transcript.length > 30 && !examDetail.allowVoice) {
+    postRequest("api/exam/end", { examId: examDetail.id }).then((_res) => {
+      history.push({
+        pathname: "/dashboard",
+      });
+    });
+    return null;
+  }
+
   return (
     <>
       <Snackbar
@@ -335,6 +368,17 @@ const StartTest = (props) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeCalculator} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog open={transcriptOpen} onClose={closeTranscript}>
+        <DialogContent className="transcript_actual">
+          <h3 style={{ marginBottom: "20px" }}>User Voice Transcript</h3>
+          <p>{transcript}</p>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeTranscript} color="primary">
             Close
           </Button>
         </DialogActions>
@@ -444,6 +488,12 @@ const StartTest = (props) => {
         )}
       </div>
       <div className="webcam_container">
+        <IconButton
+          className="calculator_btn"
+          onClick={() => setTranscriptOpen(true)}
+        >
+          <RecordVoiceOverIcon fontSize="large" />
+        </IconButton>
         <Webcam
           height={200}
           width={200}
