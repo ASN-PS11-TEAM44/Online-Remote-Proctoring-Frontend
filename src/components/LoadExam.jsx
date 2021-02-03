@@ -3,7 +3,7 @@ import { postRequest } from "../utils/serviceCall";
 import "../styles/env.css";
 
 const LoadExam = (props) => {
-  const [timer, setTimer] = useState(15);
+  const [timer, setTimer] = useState(5);
   const {
     callback,
     setQuestions,

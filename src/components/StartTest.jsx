@@ -6,7 +6,6 @@ import Button from "@material-ui/core/Button";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
 import DialogContent from "@material-ui/core/DialogContent";
-import Calculator from "awesome-react-calculator";
 import IconButton from "@material-ui/core/IconButton";
 import Pagination from "@material-ui/lab/Pagination";
 import Snackbar from "@material-ui/core/Snackbar";
@@ -15,6 +14,7 @@ import RecordVoiceOverIcon from "@material-ui/icons/RecordVoiceOver";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import { StudentVideoCall } from "./StudentVideoCall.jsx";
 
 import { postRequest } from "../utils/serviceCall";
 import { Timer } from "./Timer.jsx";
@@ -362,9 +362,16 @@ const StartTest = (props) => {
       <Dialog open={!isPageVisible && awayTimer > 0}>
         <DialogContent>Away for {awayTimer} seconds</DialogContent>
       </Dialog>
-      <Dialog open={calculatorOpen} onClose={closeCalculator}>
+      <Dialog open={calculatorOpen} onClose={closeCalculator} maxWidth="xl">
         <DialogContent className="calculator_actual">
-          <Calculator />
+          <p>
+            <iframe
+              title="calculator"
+              src="https://www.desmos.com/testing/virginia/scientific"
+              width="600"
+              height="400"
+            ></iframe>
+          </p>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeCalculator} color="primary">
@@ -503,6 +510,7 @@ const StartTest = (props) => {
           onUserMediaError={handleMediaError}
           ref={webcamRef}
         />
+        <StudentVideoCall examId={examDetail.id} />
       </div>
     </>
   );

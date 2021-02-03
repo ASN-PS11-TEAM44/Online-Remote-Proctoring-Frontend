@@ -9,7 +9,6 @@
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.3",
     "@testing-library/user-event": "^12.6.2",
-    "awesome-react-calculator": "^1.0.9",
     "axios": "^0.21.1",
     "crypto-js": "^4.0.0",
     "lodash.throttle": "^4.1.1",
@@ -23,7 +22,9 @@
     "redux": "^4.0.5",
     "redux-logger": "^3.0.6",
     "redux-thunk": "^2.3.0",
+    "simple-peer": "^9.6.2",
     "socket.io-client": "^3.1.0",
+    "styled-components": "^5.2.1",
     "sweetalert2": "^10.14.0",
     "web-vitals": "^0.2.4"
   },
